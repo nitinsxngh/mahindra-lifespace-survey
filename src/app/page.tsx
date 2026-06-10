@@ -7,7 +7,7 @@ export default function HomePage() {
       <div className="mb-8">
         <Header
           title="Amenity Survey"
-          subtitle="Login with your mobile number to share your amenity preferences"
+          subtitle="Sign in with your mobile number to begin the survey"
         />
       </div>
       <LoginForm />

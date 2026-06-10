@@ -7,20 +7,30 @@ import { Alert } from "@/components/ui/Alert";
 
 type Step = "phone" | "otp";
 
+const OTP_LENGTH = 6;
+const PHONE_LENGTH = 10;
+
 export function LoginForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  async function handleSendOtp(e: FormEvent) {
-    e.preventDefault();
+  const isOtpComplete = otp.length === OTP_LENGTH;
+  const isPhoneComplete = phone.length === PHONE_LENGTH;
+  const isBusy = isSendingOtp || isVerifyingOtp;
+
+  async function handleSendOtp(e?: FormEvent) {
+    e?.preventDefault();
+    if (!isPhoneComplete || isBusy) return;
+
     setError("");
-    setInfo("");
-    setLoading(true);
+    if (step === "phone") setInfo("");
+    setIsSendingOtp(true);
 
     try {
       const res = await fetch("/api/auth/send-otp", {
@@ -40,14 +50,16 @@ export function LoginForm() {
     } catch {
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setIsSendingOtp(false);
     }
   }
 
   async function handleVerifyOtp(e: FormEvent) {
     e.preventDefault();
+    if (!isOtpComplete || isBusy) return;
+
     setError("");
-    setLoading(true);
+    setIsVerifyingOtp(true);
 
     try {
       const res = await fetch("/api/auth/verify-otp", {
@@ -67,7 +79,7 @@ export function LoginForm() {
     } catch {
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setIsVerifyingOtp(false);
     }
   }
 
@@ -97,12 +109,12 @@ export function LoginForm() {
                 id="phone"
                 type="tel"
                 inputMode="numeric"
-                maxLength={10}
+                maxLength={PHONE_LENGTH}
                 placeholder="9876543210"
                 className="input-field pl-14"
                 value={phone}
                 onChange={(e) =>
-                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                  setPhone(e.target.value.replace(/\D/g, "").slice(0, PHONE_LENGTH))
                 }
                 required
                 autoComplete="tel"
@@ -115,7 +127,12 @@ export function LoginForm() {
 
           {error && <Alert type="error" message={error} />}
 
-          <Button type="submit" loading={loading} className="w-full">
+          <Button
+            type="submit"
+            loading={isSendingOtp}
+            disabled={!isPhoneComplete}
+            className="w-full"
+          >
             Send OTP
           </Button>
         </form>
@@ -132,12 +149,12 @@ export function LoginForm() {
               id="otp"
               type="text"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={OTP_LENGTH}
               placeholder="6-digit code"
               className="input-field text-center text-lg tracking-[0.4em]"
               value={otp}
               onChange={(e) =>
-                setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                setOtp(e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))
               }
               required
               autoComplete="one-time-code"
@@ -147,7 +164,8 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={handleChangeNumber}
-                className="ml-2 font-medium text-brand-500 hover:text-brand-600"
+                disabled={isBusy}
+                className="ml-2 font-medium text-brand-500 hover:text-brand-600 disabled:opacity-50"
               >
                 Change
               </button>
@@ -161,13 +179,19 @@ export function LoginForm() {
             <Button
               type="button"
               variant="secondary"
-              onClick={handleSendOtp}
-              loading={loading}
+              onClick={() => handleSendOtp()}
+              loading={isSendingOtp}
+              disabled={isVerifyingOtp}
               className="w-full sm:flex-1"
             >
               Resend OTP
             </Button>
-            <Button type="submit" loading={loading} className="w-full sm:flex-1">
+            <Button
+              type="submit"
+              loading={isVerifyingOtp}
+              disabled={!isOtpComplete || isSendingOtp}
+              className="w-full sm:flex-1"
+            >
               Verify & Continue
             </Button>
           </div>

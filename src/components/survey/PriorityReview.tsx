@@ -18,11 +18,12 @@ export function PriorityReview({ services, rankings }: PriorityReviewProps) {
 
   return (
     <div className="card mx-auto max-w-3xl p-4 sm:p-6">
-      <h3 className="text-base font-semibold text-charcoal-800">
-        Your priority list
+      <h3 className="text-base font-semibold text-charcoal-800 sm:text-lg">
+        Your choices so far
       </h3>
       <p className="mt-1 text-sm text-charcoal-500">
-        Review your selections before submitting. Priority 1 is your top choice.
+        Number 1 is what you like the most. Please check your choices before you
+        submit.
       </p>
 
       <ol className="mt-4 space-y-3">
@@ -57,13 +58,6 @@ export function PriorityReview({ services, rankings }: PriorityReviewProps) {
           </li>
         ))}
       </ol>
-
-      {ranked.length < 4 && (
-        <p className="mt-3 text-sm text-amber-700">
-          {4 - ranked.length} more card{4 - ranked.length !== 1 ? "s" : ""} to
-          assign — tap unselected cards in order.
-        </p>
-      )}
     </div>
   );
 }

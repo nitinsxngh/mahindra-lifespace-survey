@@ -10,9 +10,12 @@ import { PriorityReview } from "./PriorityReview";
 
 const TOTAL_PRIORITIES = 4;
 
+type SurveyPhase = "selecting" | "review";
+
 export function SurveyForm() {
   const [services, setServices] = useState<Service[]>([]);
   const [rankings, setRankings] = useState<Record<string, number>>({});
+  const [phase, setPhase] = useState<SurveyPhase>("selecting");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -60,6 +63,7 @@ export function SurveyForm() {
   );
 
   function handleSelect(serviceId: string) {
+    if (phase !== "selecting") return;
     if (reservedServiceIds.has(serviceId) || currentPriority > TOTAL_PRIORITIES) {
       return;
     }
@@ -71,6 +75,8 @@ export function SurveyForm() {
   }
 
   function handleUndo(serviceId: string) {
+    if (phase !== "selecting") return;
+
     const removedPriority = rankings[serviceId];
     if (!removedPriority) return;
 
@@ -87,10 +93,25 @@ export function SurveyForm() {
 
   function handleResetAll() {
     setRankings({});
+    setPhase("selecting");
+    setError("");
+  }
+
+  function handleContinue() {
+    if (!allRanked) return;
+    setError("");
+    setPhase("review");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleEditChoices() {
+    setPhase("selecting");
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleSubmit() {
-    if (!allRanked) return;
+    if (!allRanked || phase !== "review") return;
 
     setError("");
     setSubmitting(true);
@@ -157,23 +178,60 @@ export function SurveyForm() {
     return <SuccessMessage />;
   }
 
+  if (phase === "review") {
+    return (
+      <div className="space-y-6">
+        {error && (
+          <div className="mx-auto max-w-3xl">
+            <Alert type="error" message={error} />
+          </div>
+        )}
+
+        <PriorityReview services={services} rankings={rankings} />
+
+        <div className="sticky bottom-0 border-t border-charcoal-200/80 bg-white/90 px-4 py-4 backdrop-blur-sm sm:static sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button
+              variant="secondary"
+              onClick={handleEditChoices}
+              className="w-full sm:max-w-[200px]"
+            >
+              Edit choices
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={submitting}
+              className="w-full sm:max-w-md"
+            >
+              Submit survey
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="card mx-auto max-w-3xl p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-charcoal-800">
-          Choose your amenity priorities
+          How would you like to rank these amenities?
         </h2>
-        <p className="mt-1 text-sm text-charcoal-500">
-          Tap one card at a time to assign priority{" "}
-          <strong>1</strong> (best fit) through <strong>4</strong> (least
-          preferred). Selected cards are reserved until all four are assigned.
+        <p className="mt-2 text-sm leading-relaxed text-charcoal-600">
+          Tap one amenity at a time. Start with the one you like{" "}
+          <strong className="text-brand-600">most</strong> (this will be number{" "}
+          <strong className="text-brand-600">1</strong>), then the next one you
+          prefer, and continue until all four are selected. Number{" "}
+          <strong className="text-brand-600">4</strong> will be the one you like{" "}
+          <strong className="text-charcoal-700">least</strong>.
         </p>
 
         <div className="mt-5 rounded-xl border border-charcoal-100 bg-charcoal-50/60 p-4">
           {allRanked ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-emerald-700">
-                All 4 priorities assigned — review below and submit.
+                You have selected all 4 amenities. Tap Continue to review your
+                choices.
               </p>
               <button
                 type="button"
@@ -187,12 +245,14 @@ export function SurveyForm() {
             <p className="text-sm text-charcoal-600">
               Step {currentPriority} of {TOTAL_PRIORITIES}:{" "}
               <span className="font-semibold text-brand-600">
-                Tap a card to assign Priority {currentPriority}
+                Tap the amenity you
                 {currentPriority === 1
-                  ? " — your top choice"
-                  : currentPriority === TOTAL_PRIORITIES
-                    ? " — your least preferred"
-                    : ""}
+                  ? " like the most"
+                  : currentPriority === 2
+                    ? " like next"
+                    : currentPriority === TOTAL_PRIORITIES
+                      ? " like the least"
+                      : " prefer next"}
               </span>
             </p>
           )}
@@ -215,7 +275,7 @@ export function SurveyForm() {
                 >
                   <span className="text-lg font-bold">{p}</span>
                   <span className="text-[10px] font-medium uppercase tracking-wide">
-                    {isDone ? "Done" : isCurrent ? "Now" : "Next"}
+                    {isDone ? "Selected" : isCurrent ? "Select now" : "Up next"}
                   </span>
                 </div>
               );
@@ -250,17 +310,16 @@ export function SurveyForm() {
         })}
       </div>
 
-      {assignedCount > 0 && <PriorityReview services={services} rankings={rankings} />}
-
       <div className="sticky bottom-0 border-t border-charcoal-200/80 bg-white/90 px-4 py-4 backdrop-blur-sm sm:static sm:border-0 sm:bg-transparent sm:p-0">
         <div className="mx-auto flex max-w-3xl justify-center">
           <Button
-            onClick={handleSubmit}
-            loading={submitting}
+            onClick={handleContinue}
             disabled={!allRanked}
             className="w-full max-w-md"
           >
-            {allRanked ? "Submit Survey" : `Assign ${TOTAL_PRIORITIES - assignedCount} more`}
+            {allRanked
+              ? "Continue"
+              : `Select ${TOTAL_PRIORITIES - assignedCount} more`}
           </Button>
         </div>
       </div>

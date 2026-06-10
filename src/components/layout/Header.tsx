@@ -1,14 +1,15 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 
 interface HeaderProps {
   title?: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   showLogo?: boolean;
 }
 
 export function Header({
   title,
-  subtitle = "Share your amenity preferences with us",
+  subtitle = "Tell us which amenities matter most to you",
   showLogo = true,
 }: HeaderProps) {
   return (
@@ -33,13 +34,13 @@ export function Header({
       )}
 
       {subtitle && (
-        <p
+        <div
           className={`text-sm text-charcoal-500 sm:text-base ${
             title ? "mt-2" : "mt-1"
           }`}
         >
           {subtitle}
-        </p>
+        </div>
       )}
     </header>
   );

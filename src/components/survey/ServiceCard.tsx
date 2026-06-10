@@ -47,10 +47,10 @@ export function ServiceCard({
       onKeyDown={handleKeyDown}
       aria-label={
         isReserved
-          ? `${service.name}, priority ${priority}. Press to change selection.`
+          ? `${service.name}, selected as number ${priority}. Tap to change.`
           : isSelectable
-            ? `Select ${service.name} for your next priority`
-            : `${service.name}, waiting for selection`
+            ? `Select ${service.name}`
+            : `${service.name}, not yet selected`
       }
       aria-disabled={!isReserved && !isSelectable}
       className={`card relative overflow-hidden transition-all duration-300 ${
@@ -82,13 +82,13 @@ export function ServiceCard({
               {priority}
             </div>
             <span className="mt-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-600 sm:mt-2 sm:px-3 sm:py-1 sm:text-xs">
-              Reserved
+              Selected
             </span>
           </div>
         ) : isSelectable ? (
           <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-charcoal-900/70 to-transparent px-2 pb-2 pt-6 sm:px-3 sm:pb-3 sm:pt-8">
             <span className="block text-center text-[10px] font-semibold uppercase tracking-wide text-white sm:text-xs">
-              Tap to assign
+              Tap to select
             </span>
           </div>
         ) : null}
@@ -118,7 +118,7 @@ export function ServiceCard({
 
         {isReserved && (
           <p className="mt-2 hidden text-center text-xs text-charcoal-500 sm:block">
-            Tap card to remove &amp; re-select from here
+            Tap again to change this choice
           </p>
         )}
       </div>

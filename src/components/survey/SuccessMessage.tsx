@@ -18,15 +18,15 @@ export function SuccessMessage() {
         </svg>
       </div>
       <h2 className="text-2xl font-bold text-charcoal-800">
-        Thank you for your feedback!
+        Thank you!
       </h2>
       <p className="mt-3 text-charcoal-600">
-        Your survey has been submitted successfully. We appreciate you taking
-        the time to share your amenity preferences.
+        Your choices have been submitted successfully. We appreciate you sharing
+        your amenity preferences with us.
       </p>
       <p className="mt-4 rounded-xl bg-charcoal-50 px-4 py-3 text-sm text-charcoal-500">
-        This survey is now closed for your number. You won&apos;t be able to
-        submit again.
+        This survey is now closed for your mobile number. You will not be able
+        to submit again.
       </p>
     </div>
   );
