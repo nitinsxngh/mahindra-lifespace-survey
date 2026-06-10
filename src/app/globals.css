@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-charcoal-800 antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-charcoal-200 bg-white px-5 py-3 text-sm font-semibold text-charcoal-700 shadow-sm transition hover:bg-charcoal-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-charcoal-200 bg-white px-4 py-3 text-base text-charcoal-900 shadow-sm transition placeholder:text-charcoal-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+  }
+
+  .card {
+    @apply rounded-2xl border border-charcoal-100 bg-white shadow-card;
+  }
+
+  @keyframes pulse-subtle {
+    0%,
+    100% {
+      box-shadow: 0 12px 40px -8px rgba(227, 24, 55, 0.15);
+    }
+    50% {
+      box-shadow: 0 12px 40px -4px rgba(227, 24, 55, 0.28);
+    }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+}
