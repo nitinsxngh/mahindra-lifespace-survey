@@ -1,0 +1,2 @@
+export const MIN_AMENITY_SELECTIONS = 2;
+export const MAX_AMENITY_SELECTIONS = 2;

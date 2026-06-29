@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Service } from "@/types";
+import {
+  MAX_AMENITY_SELECTIONS,
+  MIN_AMENITY_SELECTIONS,
+} from "@/lib/survey-config";
 import { ServiceCard } from "./ServiceCard";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { SuccessMessage } from "./SuccessMessage";
 import { PriorityReview } from "./PriorityReview";
-
-const TOTAL_PRIORITIES = 4;
 
 type SurveyPhase = "selecting" | "review";
 
@@ -55,7 +57,8 @@ export function SurveyForm() {
 
   const assignedCount = Object.keys(rankings).length;
   const currentPriority = assignedCount + 1;
-  const allRanked = assignedCount === TOTAL_PRIORITIES;
+  const selectionComplete = assignedCount === MAX_AMENITY_SELECTIONS;
+  const remainingSelections = MAX_AMENITY_SELECTIONS - assignedCount;
 
   const reservedServiceIds = useMemo(
     () => new Set(Object.keys(rankings)),
@@ -64,7 +67,10 @@ export function SurveyForm() {
 
   function handleSelect(serviceId: string) {
     if (phase !== "selecting") return;
-    if (reservedServiceIds.has(serviceId) || currentPriority > TOTAL_PRIORITIES) {
+    if (
+      reservedServiceIds.has(serviceId) ||
+      assignedCount >= MAX_AMENITY_SELECTIONS
+    ) {
       return;
     }
 
@@ -98,7 +104,7 @@ export function SurveyForm() {
   }
 
   function handleContinue() {
-    if (!allRanked) return;
+    if (!selectionComplete) return;
     setError("");
     setPhase("review");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -111,15 +117,15 @@ export function SurveyForm() {
   }
 
   async function handleSubmit() {
-    if (!allRanked || phase !== "review") return;
+    if (!selectionComplete || phase !== "review") return;
 
     setError("");
     setSubmitting(true);
 
     const payload = {
-      rankings: services.map((s) => ({
-        serviceId: s._id,
-        priority: rankings[s._id],
+      rankings: Object.entries(rankings).map(([serviceId, priority]) => ({
+        serviceId,
+        priority,
       })),
     };
 
@@ -215,22 +221,22 @@ export function SurveyForm() {
     <div className="space-y-6">
       <div className="card mx-auto max-w-3xl p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-charcoal-800">
-          How would you like to rank these amenities?
+          Pick the 2 amenities that best fit your vision
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-charcoal-600">
-          Tap one amenity at a time. Start with the one you like{" "}
-          <strong className="text-brand-600">most</strong> (this will be number{" "}
-          <strong className="text-brand-600">1</strong>), then the next one you
-          prefer, and continue until all four are selected. Number{" "}
-          <strong className="text-brand-600">4</strong> will be the one you like{" "}
-          <strong className="text-charcoal-700">least</strong>.
+          From the 4 options below, choose exactly{" "}
+          <strong className="text-brand-600">2 amenities</strong>. Tap the one
+          you like <strong className="text-brand-600">most</strong> first
+          (number <strong className="text-brand-600">1</strong>), then tap the
+          next one you prefer (number{" "}
+          <strong className="text-brand-600">2</strong>).
         </p>
 
         <div className="mt-5 rounded-xl border border-charcoal-100 bg-charcoal-50/60 p-4">
-          {allRanked ? (
+          {selectionComplete ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-emerald-700">
-                You have selected all 4 amenities. Tap Continue to review your
+                You have selected 2 amenities. Tap Continue to review your
                 choices.
               </p>
               <button
@@ -243,44 +249,56 @@ export function SurveyForm() {
             </div>
           ) : (
             <p className="text-sm text-charcoal-600">
-              Step {currentPriority} of {TOTAL_PRIORITIES}:{" "}
-              <span className="font-semibold text-brand-600">
-                Tap the amenity you
-                {currentPriority === 1
-                  ? " like the most"
-                  : currentPriority === 2
-                    ? " like next"
-                    : currentPriority === TOTAL_PRIORITIES
-                      ? " like the least"
-                      : " prefer next"}
-              </span>
+              {assignedCount < MIN_AMENITY_SELECTIONS ? (
+                <>
+                  Selection {currentPriority} of {MAX_AMENITY_SELECTIONS}:{" "}
+                  <span className="font-semibold text-brand-600">
+                    Tap the amenity you
+                    {currentPriority === 1 ? " like the most" : " prefer next"}
+                  </span>
+                </>
+              ) : (
+                <span className="font-semibold text-brand-600">
+                  Select {remainingSelections} more amenity to continue.
+                </span>
+              )}
             </p>
           )}
 
           <div className="mt-4 flex gap-2">
-            {[1, 2, 3, 4].map((p) => {
-              const isDone = p < currentPriority || allRanked;
-              const isCurrent = p === currentPriority && !allRanked;
+            {Array.from({ length: MAX_AMENITY_SELECTIONS }, (_, i) => i + 1).map(
+              (p) => {
+                const isDone = p < currentPriority || selectionComplete;
+                const isCurrent = p === currentPriority && !selectionComplete;
 
-              return (
-                <div
-                  key={p}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 transition ${
-                    isDone
-                      ? "bg-brand-500 text-white"
-                      : isCurrent
-                        ? "bg-brand-100 ring-2 ring-brand-500"
-                        : "bg-white text-charcoal-400"
-                  }`}
-                >
-                  <span className="text-lg font-bold">{p}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wide">
-                    {isDone ? "Selected" : isCurrent ? "Select now" : "Up next"}
-                  </span>
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={p}
+                    className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 transition ${
+                      isDone
+                        ? "bg-brand-500 text-white"
+                        : isCurrent
+                          ? "bg-brand-100 ring-2 ring-brand-500"
+                          : "bg-white text-charcoal-400"
+                    }`}
+                  >
+                    <span className="text-lg font-bold">{p}</span>
+                    <span className="text-[10px] font-medium uppercase tracking-wide">
+                      {isDone
+                        ? "Selected"
+                        : isCurrent
+                          ? "Select now"
+                          : "Up next"}
+                    </span>
+                  </div>
+                );
+              }
+            )}
           </div>
+
+          <p className="mt-3 text-center text-xs text-charcoal-500">
+            {assignedCount} of {MAX_AMENITY_SELECTIONS} selected
+          </p>
         </div>
       </div>
 
@@ -294,7 +312,7 @@ export function SurveyForm() {
         {services.map((service) => {
           const priority = rankings[service._id] ?? null;
           const isReserved = priority !== null;
-          const isSelectable = !isReserved && !allRanked;
+          const isSelectable = !isReserved && !selectionComplete;
 
           return (
             <ServiceCard
@@ -314,12 +332,14 @@ export function SurveyForm() {
         <div className="mx-auto flex max-w-3xl justify-center">
           <Button
             onClick={handleContinue}
-            disabled={!allRanked}
+            disabled={!selectionComplete}
             className="w-full max-w-md"
           >
-            {allRanked
+            {selectionComplete
               ? "Continue"
-              : `Select ${TOTAL_PRIORITIES - assignedCount} more`}
+              : remainingSelections === MAX_AMENITY_SELECTIONS
+                ? `Select ${MAX_AMENITY_SELECTIONS} amenities`
+                : `Select ${remainingSelections} more`}
           </Button>
         </div>
       </div>

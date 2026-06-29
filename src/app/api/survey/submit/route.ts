@@ -5,16 +5,21 @@ import { getSession } from "@/lib/auth";
 import { Service } from "@/models/Service";
 import { SurveyResponse } from "@/models/SurveyResponse";
 import { errorResponse, successResponse } from "@/lib/api-response";
+import {
+  MAX_AMENITY_SELECTIONS,
+  MIN_AMENITY_SELECTIONS,
+} from "@/lib/survey-config";
 
 const submitSchema = z.object({
   rankings: z
     .array(
       z.object({
         serviceId: z.string().min(1),
-        priority: z.number().int().min(1).max(4),
+        priority: z.number().int().min(1).max(MAX_AMENITY_SELECTIONS),
       })
     )
-    .length(4),
+    .min(MIN_AMENITY_SELECTIONS)
+    .max(MAX_AMENITY_SELECTIONS),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,16 +33,35 @@ export async function POST(request: NextRequest) {
     const parsed = submitSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse("Invalid survey data. Please rank all 4 services.");
+      return errorResponse(
+        `Please select exactly ${MAX_AMENITY_SELECTIONS} amenities.`
+      );
     }
 
     const { rankings } = parsed.data;
+
+    if (rankings.length !== MAX_AMENITY_SELECTIONS) {
+      return errorResponse(
+        `Please select exactly ${MAX_AMENITY_SELECTIONS} amenities.`
+      );
+    }
+
     const priorities = rankings.map((r) => r.priority);
     const uniquePriorities = new Set(priorities);
 
-    if (uniquePriorities.size !== 4) {
+    if (uniquePriorities.size !== MAX_AMENITY_SELECTIONS) {
       return errorResponse(
-        "Each priority (1, 2, 3, 4) must be assigned exactly once."
+        `Please assign priority 1 and ${MAX_AMENITY_SELECTIONS} to your selected amenities.`
+      );
+    }
+
+    const expectedPriorities = Array.from(
+      { length: MAX_AMENITY_SELECTIONS },
+      (_, i) => i + 1
+    );
+    if (!expectedPriorities.every((p) => uniquePriorities.has(p))) {
+      return errorResponse(
+        `Please assign priority 1 and ${MAX_AMENITY_SELECTIONS} to your selected amenities.`
       );
     }
 
@@ -52,15 +76,21 @@ export async function POST(request: NextRequest) {
     }
 
     const services = await Service.find({ active: true }).lean();
-    if (services.length !== 4) {
+    if (services.length < MAX_AMENITY_SELECTIONS) {
       return errorResponse("Survey configuration error. Contact support.", 500);
     }
 
     const serviceIds = new Set(services.map((s) => s._id.toString()));
+    const selectedIds = new Set<string>();
+
     for (const ranking of rankings) {
       if (!serviceIds.has(ranking.serviceId)) {
-        return errorResponse("Invalid service in rankings.");
+        return errorResponse("Invalid amenity in selection.");
       }
+      if (selectedIds.has(ranking.serviceId)) {
+        return errorResponse("Each amenity can only be selected once.");
+      }
+      selectedIds.add(ranking.serviceId);
     }
 
     await SurveyResponse.create({

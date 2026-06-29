@@ -4,11 +4,12 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
+import { Disclaimer } from "@/components/layout/Disclaimer";
+import { isValidPhone, normalizePhone } from "@/lib/otp";
 
 type Step = "phone" | "otp";
 
 const OTP_LENGTH = 6;
-const PHONE_LENGTH = 10;
 
 export function LoginForm() {
   const router = useRouter();
@@ -21,12 +22,12 @@ export function LoginForm() {
   const [info, setInfo] = useState("");
 
   const isOtpComplete = otp.length === OTP_LENGTH;
-  const isPhoneComplete = phone.length === PHONE_LENGTH;
+  const canSendOtp = isValidPhone(phone);
   const isBusy = isSendingOtp || isVerifyingOtp;
 
   async function handleSendOtp(e?: FormEvent) {
     e?.preventDefault();
-    if (!isPhoneComplete || isBusy) return;
+    if (!canSendOtp || isBusy) return;
 
     setError("");
     if (step === "phone") setInfo("");
@@ -91,7 +92,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="card mx-auto w-full max-w-md p-6 sm:p-8">
+    <>
+      <div className="card mx-auto w-full max-w-md p-6 sm:p-8">
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-5">
           <div>
@@ -109,13 +111,10 @@ export function LoginForm() {
                 id="phone"
                 type="tel"
                 inputMode="numeric"
-                maxLength={PHONE_LENGTH}
                 placeholder="9876543210"
                 className="input-field pl-14"
                 value={phone}
-                onChange={(e) =>
-                  setPhone(e.target.value.replace(/\D/g, "").slice(0, PHONE_LENGTH))
-                }
+                onChange={(e) => setPhone(normalizePhone(e.target.value))}
                 required
                 autoComplete="tel"
               />
@@ -130,7 +129,7 @@ export function LoginForm() {
           <Button
             type="submit"
             loading={isSendingOtp}
-            disabled={!isPhoneComplete}
+            disabled={!canSendOtp}
             className="w-full"
           >
             Send OTP
@@ -197,6 +196,8 @@ export function LoginForm() {
           </div>
         </form>
       )}
-    </div>
+      </div>
+      {step === "phone" && <Disclaimer />}
+    </>
   );
 }

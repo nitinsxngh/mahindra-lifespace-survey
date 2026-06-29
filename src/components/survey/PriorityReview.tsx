@@ -22,8 +22,8 @@ export function PriorityReview({ services, rankings }: PriorityReviewProps) {
         Your choices so far
       </h3>
       <p className="mt-1 text-sm text-charcoal-500">
-        Number 1 is what you like the most. Please check your choices before you
-        submit.
+        Number 1 is your first choice and number 2 is your second choice.
+        Please check before you submit.
       </p>
 
       <ol className="mt-4 space-y-3">

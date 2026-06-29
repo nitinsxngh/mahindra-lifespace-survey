@@ -21,7 +21,7 @@ export default async function SurveyPage() {
               <span className="font-bold text-brand-600">
                 +91 {session.phone}
               </span>
-              . Please choose all 4 amenities in the order you prefer.
+              . Please pick the 2 amenities that best fit your vision.
             </p>
           }
         />
