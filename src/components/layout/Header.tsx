@@ -15,13 +15,13 @@ export function Header({
   return (
     <header className="text-center">
       {showLogo && (
-        <div className="mx-auto mb-5 flex justify-center">
+        <div className="mx-auto mb-3 flex justify-center sm:mb-4">
           <Image
-            src="/images/mahendra-lifespace-logo.png"
-            alt="Mahindra Lifespaces"
-            width={220}
-            height={72}
-            className="h-auto w-44 sm:w-52"
+            src="/images/happinest-palghar-logo.png"
+            alt="Mahindra Happinest Palghar - 2"
+            width={3820}
+            height={348}
+            className="h-[40px] w-auto sm:h-[48px]"
             priority
           />
         </div>

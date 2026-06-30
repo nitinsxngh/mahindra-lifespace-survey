@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mahindra Lifespaces | Amenity Survey",
+  title: "Mahindra Happinest Palghar | Amenity Survey",
   description:
-    "Share your amenity preferences for Mahindra Lifespaces through our quick survey",
+    "Share your amenity preferences for Mahindra Happinest Palghar through our quick survey",
 };
 
 export const viewport: Viewport = {
