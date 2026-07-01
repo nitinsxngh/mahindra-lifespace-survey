@@ -17,10 +17,10 @@ export function Header({
       {showLogo && (
         <div className="mx-auto mb-3 flex justify-center sm:mb-4">
           <Image
-            src="/images/happinest-palghar-logo.png"
+            src="/images/logo.png"
             alt="Mahindra Happinest Palghar - 2"
-            width={3820}
-            height={348}
+            width={1273}
+            height={121}
             className="h-[40px] w-auto sm:h-[48px]"
             priority
           />
