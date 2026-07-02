@@ -7,7 +7,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Disclaimer } from "@/components/layout/Disclaimer";
 import { isValidPhone, normalizePhone } from "@/lib/otp";
 
-type Step = "phone" | "otp";
+type Step = "phone" | "otp" | "disclaimer";
 
 const OTP_LENGTH = 6;
 
@@ -18,12 +18,13 @@ export function LoginForm() {
   const [otp, setOtp] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
   const isOtpComplete = otp.length === OTP_LENGTH;
   const canSendOtp = isValidPhone(phone);
-  const isBusy = isSendingOtp || isVerifyingOtp;
+  const isBusy = isSendingOtp || isVerifyingOtp || isContinuing;
 
   async function handleSendOtp(e?: FormEvent) {
     e?.preventDefault();
@@ -75,13 +76,18 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/survey");
-      router.refresh();
+      setStep("disclaimer");
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setIsVerifyingOtp(false);
     }
+  }
+
+  async function handleAgreeAndContinue() {
+    setIsContinuing(true);
+    router.push("/survey");
+    router.refresh();
   }
 
   function handleChangeNumber() {
@@ -91,9 +97,18 @@ export function LoginForm() {
     setInfo("");
   }
 
+  if (step === "disclaimer") {
+    return (
+      <Disclaimer
+        showAgreeButton
+        onAgree={handleAgreeAndContinue}
+        loading={isContinuing}
+      />
+    );
+  }
+
   return (
-    <>
-      <div className="card mx-auto w-full max-w-md p-6 sm:p-8">
+    <div className="card mx-auto w-full max-w-md p-6 sm:p-8">
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-5">
           <div>
@@ -196,8 +211,6 @@ export function LoginForm() {
           </div>
         </form>
       )}
-      </div>
-      {step === "phone" && <Disclaimer />}
-    </>
+    </div>
   );
 }

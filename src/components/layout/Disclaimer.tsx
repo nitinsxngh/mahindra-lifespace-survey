@@ -1,6 +1,18 @@
-export function Disclaimer() {
+import { Button } from "@/components/ui/Button";
+
+interface DisclaimerProps {
+  showAgreeButton?: boolean;
+  onAgree?: () => void;
+  loading?: boolean;
+}
+
+export function Disclaimer({
+  showAgreeButton = false,
+  onAgree,
+  loading = false,
+}: DisclaimerProps) {
   return (
-    <aside className="mx-auto mt-8 max-w-3xl rounded-xl border border-charcoal-100 bg-charcoal-50/50 px-4 py-4 sm:px-5 sm:py-5">
+    <aside className="mx-auto w-full max-w-md rounded-xl border border-charcoal-100 bg-charcoal-50/50 px-4 py-4 sm:px-5 sm:py-5">
       <h2 className="text-sm font-semibold text-charcoal-800">Disclaimer</h2>
       <p className="mt-2 text-xs leading-relaxed text-charcoal-600 sm:text-sm">
         As you are aware, at Mahindra Happinest Palghar, you get the opportunity
@@ -9,6 +21,16 @@ export function Disclaimer() {
         amenities will be based on the majority voting of residents and statutory
         approvals, if any.
       </p>
+
+      {showAgreeButton && onAgree && (
+        <Button
+          onClick={onAgree}
+          loading={loading}
+          className="mt-5 w-full"
+        >
+          Agree and Continue
+        </Button>
+      )}
     </aside>
   );
 }
