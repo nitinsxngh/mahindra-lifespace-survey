@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ensureSurveyResponseIndexes } from "@/models/SurveyResponse";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -9,6 +10,7 @@ if (!MONGODB_URI) {
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
+  indexesReady: boolean;
 }
 
 declare global {
@@ -18,12 +20,17 @@ declare global {
 const cached: MongooseCache = global.mongooseCache ?? {
   conn: null,
   promise: null,
+  indexesReady: false,
 };
 
 global.mongooseCache = cached;
 
 export async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) {
+    if (!cached.indexesReady) {
+      await ensureSurveyResponseIndexes();
+      cached.indexesReady = true;
+    }
     return cached.conn;
   }
 
@@ -34,5 +41,11 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   cached.conn = await cached.promise;
+
+  if (!cached.indexesReady) {
+    await ensureSurveyResponseIndexes();
+    cached.indexesReady = true;
+  }
+
   return cached.conn;
 }

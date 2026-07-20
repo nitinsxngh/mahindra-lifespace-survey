@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { getSession } from "@/lib/auth";
 import { SurveyResponse } from "@/models/SurveyResponse";
+import { Invite } from "@/models/Invite";
 import { errorResponse, successResponse } from "@/lib/api-response";
 
 export async function GET() {
@@ -13,13 +14,19 @@ export async function GET() {
     await connectDB();
 
     const existing = await SurveyResponse.findOne({
-      phone: session.phone,
+      inviteId: session.inviteId,
     }).lean();
+
+    const invite = await Invite.findById(session.inviteId).lean();
+    const completed = !!existing || !!invite?.completed;
 
     return successResponse({
       phone: session.phone,
-      completed: !!existing,
+      inviteId: session.inviteId,
+      completed,
       submittedAt: existing?.submittedAt?.toISOString() ?? null,
+      name: invite?.name ?? "",
+      unitNumber: invite?.unitNumber ?? "",
     });
   } catch (error) {
     console.error("Survey status error:", error);

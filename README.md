@@ -1,102 +1,98 @@
-# Algoqube Survey Portal
+# Mahindra Happinest Palghar Survey Portal
 
-A responsive survey portal built with **Next.js**, **Node.js API routes**, and **MongoDB**. Users log in with phone number + OTP, rank four services by priority (1–4), and submit once per phone number.
+A responsive amenity survey portal built with **Next.js**, **Node.js API routes**, and **MongoDB**.
+
+Each resident receives a **unique secure invite link**. Opening the link auto-fills their mobile number (locked), then they verify with OTP, accept the disclaimer, pick 2 amenities, and submit once.
 
 ## Features
 
-- Phone number + OTP authentication (dev mode logs OTP to console)
-- Four services with image, description, and monthly rate
-- Priority ranking survey (1 = most preferred, 4 = least preferred)
-- One submission per phone number — survey closes after submit
+- Unique encrypted invite links generated from Excel (400+ residents)
+- Phone number locked to the invite (cannot be changed)
+- OTP verification via Fast2SMS Quick SMS
+- Disclaimer with Agree and Continue
+- Choose exactly 2 amenities by priority
+- One submission per invite (same phone can have multiple unit invites)
 - Responsive UI for mobile, tablet, and desktop
 - JWT session via HTTP-only cookie
 
-## Project Structure
+## Generate unique links from Excel
+
+1. Put your Excel in `Documents/` (columns should include):
+   - Tower
+   - SAP Customer Code
+   - Unit Number
+   - Booking Date
+   - Primary Applicant Name
+   - Applicant Mobile
+   - Applicant Email
+   - Link (filled by the script)
+
+2. Set your public site URL in `.env`:
+
+   ```
+   SURVEY_BASE_URL=https://your-domain.com
+   ```
+
+3. Run:
+
+   ```bash
+   npm run generate-links
+   ```
+
+   Optional custom paths:
+
+   ```bash
+   npm run generate-links -- ./Documents/your-file.xlsx ./Documents/output-with-links.xlsx
+   ```
+
+4. Share the `Link` column values with each resident (SMS/email).
+
+Each link looks like:
 
 ```
-src/
-├── app/
-│   ├── api/           # Node.js API routes
-│   │   ├── auth/      # send-otp, verify-otp, logout
-│   │   └── survey/    # status, submit
-│   ├── survey/        # Survey page
-│   └── page.tsx       # Login page
-├── components/
-│   ├── auth/          # LoginForm
-│   ├── survey/        # SurveyForm, ServiceCard, SuccessMessage
-│   ├── layout/        # Header
-│   └── ui/            # Button, Alert
-├── lib/               # mongodb, auth, otp, api-response
-├── models/            # Mongoose schemas
-└── types/             # Shared TypeScript types
+https://your-domain.com/invite/<secure-token>
 ```
 
-## Prerequisites
-
-- Node.js 18+
-- MongoDB (local or Atlas)
-
-## Setup
-
-1. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-2. **Configure environment**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edit `.env`:
-
-   ```
-   MONGODB_URI=mongodb://localhost:27017/algoqube-survey
-   JWT_SECRET=your-super-secret-jwt-key
-   DEV_MODE=true
-   ```
-
-3. **Seed services**
-
-   ```bash
-   npm run seed
-   ```
-
-4. **Run development server**
-
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000)
+Tokens are 32-byte cryptographically random values (base64url). They are stored in MongoDB and validated on every login/OTP/submit.
 
 ## Usage Flow
 
-1. Enter a 10-digit Indian mobile number
-2. Receive OTP (printed in terminal when `DEV_MODE=true`)
-3. Verify OTP → redirected to survey
-4. Assign priorities 1–4 to each service
-5. Submit → success message; same number cannot survey again
+1. Resident opens their unique invite link
+2. Mobile number appears automatically (read-only)
+3. Send OTP → Verify
+4. Agree to disclaimer
+5. Select 2 amenities in order of preference
+6. Review → Submit survey
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env
+npm run seed
+npm run generate-links
+npm run dev
+```
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/send-otp` | Send OTP to phone |
+| GET | `/api/invite/:token` | Validate invite + return locked phone |
+| POST | `/api/auth/send-otp` | Send OTP (requires inviteToken) |
 | POST | `/api/auth/verify-otp` | Verify OTP & create session |
 | POST | `/api/auth/logout` | Clear session |
-| GET | `/api/services` | List active services |
-| GET | `/api/survey/status` | Check if user completed survey |
+| GET | `/api/services` | List active amenities |
+| GET | `/api/survey/status` | Check if invite completed survey |
 | POST | `/api/survey/submit` | Submit rankings |
 
 ## Production Notes
 
-- Set `DEV_MODE=false` and integrate an SMS provider (Twilio, MSG91, etc.) in `send-otp/route.ts`
-- Use a strong `JWT_SECRET`
-- Use MongoDB Atlas or a managed MongoDB instance
-- Deploy on Vercel, Railway, or any Node.js host
+- Set a strong `JWT_SECRET`
+- Set `SURVEY_BASE_URL` to your live domain before generating links
+- Set `FAST2SMS_API_KEY` for OTP SMS via Quick SMS route
+- Configure SMTP (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) to send confirmation emails after survey submit
+- Keep invite Excel outputs private (links grant survey access)
 
 ## License
 

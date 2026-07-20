@@ -7,6 +7,7 @@ export interface IRanking {
 
 export interface ISurveyResponse extends Document {
   phone: string;
+  inviteId: mongoose.Types.ObjectId;
   rankings: IRanking[];
   submittedAt: Date;
 }
@@ -25,7 +26,15 @@ const RankingSchema = new Schema<IRanking>(
 
 const SurveyResponseSchema = new Schema<ISurveyResponse>(
   {
-    phone: { type: String, required: true, unique: true, index: true },
+    // Non-unique: same phone may submit once per invite/unit
+    phone: { type: String, required: true, index: true },
+    inviteId: {
+      type: Schema.Types.ObjectId,
+      ref: "Invite",
+      required: true,
+      unique: true,
+      index: true,
+    },
     rankings: { type: [RankingSchema], required: true },
     submittedAt: { type: Date, default: Date.now },
   },
@@ -35,3 +44,15 @@ const SurveyResponseSchema = new Schema<ISurveyResponse>(
 export const SurveyResponse: Model<ISurveyResponse> =
   mongoose.models.SurveyResponse ||
   mongoose.model<ISurveyResponse>("SurveyResponse", SurveyResponseSchema);
+
+/** Drop legacy unique phone index from pre-invite schema (same phone, multiple units). */
+export async function ensureSurveyResponseIndexes(): Promise<void> {
+  const collection = mongoose.connection.collection("surveyresponses");
+  const indexes = await collection.indexes();
+  const phoneIndex = indexes.find((idx) => idx.name === "phone_1");
+
+  if (phoneIndex?.unique) {
+    await collection.dropIndex("phone_1");
+    await collection.createIndex({ phone: 1 });
+  }
+}

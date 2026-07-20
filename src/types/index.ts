@@ -21,6 +21,7 @@ export interface SurveyResponse {
 
 export interface AuthUser {
   phone: string;
+  inviteId: string;
 }
 
 export interface ApiResponse<T = unknown> {

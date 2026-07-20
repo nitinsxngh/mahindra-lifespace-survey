@@ -5,16 +5,27 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Disclaimer } from "@/components/layout/Disclaimer";
-import { isValidPhone, normalizePhone } from "@/lib/otp";
+import { isValidPhone } from "@/lib/otp";
 
 type Step = "phone" | "otp" | "disclaimer";
 
 const OTP_LENGTH = 6;
 
-export function LoginForm() {
+interface LoginFormProps {
+  inviteToken: string;
+  lockedPhone: string;
+  applicantName?: string;
+}
+
+export function LoginForm({
+  inviteToken,
+  lockedPhone,
+  applicantName,
+}: LoginFormProps) {
   const router = useRouter();
+
   const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState("");
+  const [phone] = useState(lockedPhone);
   const [otp, setOtp] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -23,7 +34,7 @@ export function LoginForm() {
   const [info, setInfo] = useState("");
 
   const isOtpComplete = otp.length === OTP_LENGTH;
-  const canSendOtp = isValidPhone(phone);
+  const canSendOtp = isValidPhone(phone) && !!inviteToken;
   const isBusy = isSendingOtp || isVerifyingOtp || isContinuing;
 
   async function handleSendOtp(e?: FormEvent) {
@@ -38,7 +49,7 @@ export function LoginForm() {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, inviteToken }),
       });
       const data = await res.json();
 
@@ -47,10 +58,12 @@ export function LoginForm() {
         return;
       }
 
-      setInfo(data.message || "OTP sent successfully");
+      setInfo("OTP sent to your mobile number.");
       setStep("otp");
-    } catch {
-      setError("Network error. Please try again.");
+      setOtp("");
+    } catch (err) {
+      console.error("Send OTP failed:", err);
+      setError("Failed to send OTP. Please try again.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -67,7 +80,7 @@ export function LoginForm() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone, otp, inviteToken }),
       });
       const data = await res.json();
 
@@ -77,8 +90,9 @@ export function LoginForm() {
       }
 
       setStep("disclaimer");
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      console.error("Verify OTP failed:", err);
+      setError("Invalid or expired OTP. Please try again.");
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -88,13 +102,6 @@ export function LoginForm() {
     setIsContinuing(true);
     router.push("/survey");
     router.refresh();
-  }
-
-  function handleChangeNumber() {
-    setStep("phone");
-    setOtp("");
-    setError("");
-    setInfo("");
   }
 
   if (step === "disclaimer") {
@@ -111,6 +118,12 @@ export function LoginForm() {
     <div className="card mx-auto w-full max-w-md p-6 sm:p-8">
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-5">
+          {applicantName ? (
+            <p className="rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+              Welcome, <strong>{applicantName}</strong>
+            </p>
+          ) : null}
+
           <div>
             <label
               htmlFor="phone"
@@ -126,16 +139,15 @@ export function LoginForm() {
                 id="phone"
                 type="tel"
                 inputMode="numeric"
-                placeholder="9876543210"
-                className="input-field pl-14"
+                className="input-field cursor-not-allowed bg-charcoal-50 pl-14 text-charcoal-700"
                 value={phone}
-                onChange={(e) => setPhone(normalizePhone(e.target.value))}
-                required
-                autoComplete="tel"
+                readOnly
+                aria-readonly="true"
               />
             </div>
             <p className="mt-2 text-xs text-charcoal-500">
-              We&apos;ll send a one-time password to verify your number.
+              Your mobile number is linked to this secure survey link. We will
+              send a one-time password via SMS to verify.
             </p>
           </div>
 
@@ -175,14 +187,6 @@ export function LoginForm() {
             />
             <p className="mt-2 text-xs text-charcoal-500">
               Sent to +91 {phone}
-              <button
-                type="button"
-                onClick={handleChangeNumber}
-                disabled={isBusy}
-                className="ml-2 font-medium text-brand-500 hover:text-brand-600 disabled:opacity-50"
-              >
-                Change
-              </button>
             </p>
           </div>
 

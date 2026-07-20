@@ -9,8 +9,11 @@ const JWT_SECRET = new TextEncoder().encode(
 const COOKIE_NAME = "survey_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 hours
 
-export async function createSession(phone: string): Promise<string> {
-  const token = await new SignJWT({ phone })
+export async function createSession(
+  phone: string,
+  inviteId: string
+): Promise<string> {
+  const token = await new SignJWT({ phone, inviteId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("24h")
@@ -25,8 +28,9 @@ export async function verifySession(
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const phone = payload.phone as string;
-    if (!phone) return null;
-    return { phone };
+    const inviteId = payload.inviteId as string;
+    if (!phone || !inviteId) return null;
+    return { phone, inviteId };
   } catch {
     return null;
   }

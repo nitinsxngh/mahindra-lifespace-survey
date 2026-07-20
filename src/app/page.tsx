@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { LoginForm } from "@/components/auth/LoginForm";
 
 export default function HomePage() {
   return (
@@ -7,10 +6,15 @@ export default function HomePage() {
       <div className="mb-8">
         <Header
           title="Amenity Survey"
-          subtitle="Sign in with your mobile number to begin the survey"
+          subtitle="Please open the unique survey link shared with you to continue"
         />
       </div>
-      <LoginForm />
+      <div className="card mx-auto w-full max-w-md p-6 text-center sm:p-8">
+        <p className="text-sm leading-relaxed text-charcoal-600">
+          This survey is available only through your personal secure link. Check
+          your SMS or email for the invitation and open that link to begin.
+        </p>
+      </div>
     </div>
   );
 }
