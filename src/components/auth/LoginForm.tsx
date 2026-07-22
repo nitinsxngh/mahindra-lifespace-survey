@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -10,6 +10,7 @@ import { isValidPhone } from "@/lib/otp";
 type Step = "phone" | "otp" | "disclaimer";
 
 const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 interface LoginFormProps {
   inviteToken: string;
@@ -32,14 +33,27 @@ export function LoginForm({
   const [isContinuing, setIsContinuing] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const isOtpComplete = otp.length === OTP_LENGTH;
   const canSendOtp = isValidPhone(phone) && !!inviteToken;
   const isBusy = isSendingOtp || isVerifyingOtp || isContinuing;
+  const canResendOtp = resendCooldown === 0 && !isVerifyingOtp;
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+
+    const timer = window.setTimeout(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   async function handleSendOtp(e?: FormEvent) {
     e?.preventDefault();
     if (!canSendOtp || isBusy) return;
+    if (step === "otp" && resendCooldown > 0) return;
 
     setError("");
     if (step === "phone") setInfo("");
@@ -61,6 +75,7 @@ export function LoginForm({
       setInfo("OTP sent to your mobile number.");
       setStep("otp");
       setOtp("");
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
       console.error("Send OTP failed:", err);
       setError("Failed to send OTP. Please try again.");
@@ -199,10 +214,12 @@ export function LoginForm({
               variant="secondary"
               onClick={() => handleSendOtp()}
               loading={isSendingOtp}
-              disabled={isVerifyingOtp}
+              disabled={!canResendOtp}
               className="w-full sm:flex-1"
             >
-              Resend OTP
+              {resendCooldown > 0
+                ? `Resend OTP in ${resendCooldown}s`
+                : "Resend OTP"}
             </Button>
             <Button
               type="submit"

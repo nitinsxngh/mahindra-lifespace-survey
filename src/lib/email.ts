@@ -36,6 +36,18 @@ function formatChoices(choices: SurveyChoice[]): string {
     .join("\n");
 }
 
+function formatSubmittedAt(date: Date): string {
+  return date.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 function buildConfirmationHtml(payload: ConfirmationEmailPayload): string {
   const choiceRows = payload.choices
     .sort((a, b) => a.priority - b.priority)
@@ -76,10 +88,7 @@ function buildConfirmationHtml(payload: ConfirmationEmailPayload): string {
       </tbody>
     </table>
     <p style="margin:0 0 8px;font-size:13px;color:#6b6b6b;">
-      Submitted on ${payload.submittedAt.toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })}.
+      Submitted on ${formatSubmittedAt(payload.submittedAt)} (IST).
     </p>
     <p style="margin:0;font-size:13px;color:#6b6b6b;">
       This is an automated confirmation email. Please do not reply.
@@ -103,7 +112,7 @@ export async function sendSurveyConfirmationEmail(
     "Your selected amenities:",
     formatChoices(payload.choices),
     "",
-    `Submitted on ${payload.submittedAt.toLocaleString("en-IN")}.`,
+    `Submitted on ${formatSubmittedAt(payload.submittedAt)} (IST).`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -111,6 +120,7 @@ export async function sendSurveyConfirmationEmail(
   if (!isSmtpConfigured()) {
     console.log("[EMAIL] SMTP not configured. Confirmation email preview:");
     console.log(`To: ${payload.to}`);
+    console.log(`Cc: ${process.env.SMTP_CC || "hirenitinsingh@gmail.com"}`);
     console.log(`Subject: ${subject}`);
     console.log(text);
     return;
@@ -130,9 +140,12 @@ export async function sendSurveyConfirmationEmail(
     },
   });
 
+  const cc = process.env.SMTP_CC || "hirenitinsingh@gmail.com";
+
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to: payload.to,
+    cc,
     subject,
     text,
     html: buildConfirmationHtml(payload),
