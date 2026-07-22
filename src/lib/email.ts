@@ -120,7 +120,7 @@ export async function sendSurveyConfirmationEmail(
   if (!isSmtpConfigured()) {
     console.log("[EMAIL] SMTP not configured. Confirmation email preview:");
     console.log(`To: ${payload.to}`);
-    console.log(`Cc: ${process.env.SMTP_CC || "hirenitinsingh@gmail.com"}`);
+    console.log(`Cc: ${process.env.SMTP_CC || "customercare@mahindra.com"}`);
     console.log(`Subject: ${subject}`);
     console.log(text);
     return;
@@ -140,7 +140,7 @@ export async function sendSurveyConfirmationEmail(
     },
   });
 
-  const cc = process.env.SMTP_CC || "hirenitinsingh@gmail.com";
+  const cc = process.env.SMTP_CC || "customercare@mahindra.com";
 
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
